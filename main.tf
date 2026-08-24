@@ -24,10 +24,28 @@ variable "aws_region" {
   default = "us-east-1"
 }
 
-# 1. Immutable S3 WORM Vault
+# Object Lock Retention Variables
+variable "object_lock_mode" {
+  type        = string
+  description = "Set to GOVERNANCE for testing/dev environments, COMPLIANCE for production."
+  default     = "GOVERNANCE"
+
+  validation {
+    condition     = contains(["GOVERNANCE", "COMPLIANCE"], var.object_lock_mode)
+    error_message = "object_lock_mode must be either 'GOVERNANCE' or 'COMPLIANCE'."
+  }
+}
+
+variable "retention_years" {
+  type        = number
+  description = "Number of years to retain evidence objects."
+  default     = 7
+}
+
+# 1. Immutable S3 Vault
 resource "aws_s3_bucket" "evidence_vault" {
   bucket        = "grc-evidence-vault-worm-${random_string.suffix.result}"
-  force_destroy = false
+  force_destroy = var.object_lock_mode == "GOVERNANCE" ? true : false
 }
 
 resource "random_string" "suffix" {
@@ -47,8 +65,8 @@ resource "aws_s3_bucket_object_lock_configuration" "vault_lock" {
   bucket = aws_s3_bucket.evidence_vault.id
   rule {
     default_retention {
-      mode  = "COMPLIANCE"
-      years = 7
+      mode  = var.object_lock_mode
+      years = var.retention_years
     }
   }
 }
