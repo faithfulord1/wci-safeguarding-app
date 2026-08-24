@@ -1,0 +1,71 @@
+name: Deploy GRC Evidence Vault - Governance Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type DEPLOY-GOVERNANCE to confirm the non-production deployment'
+        required: true
+        type: string
+      aws_region:
+        description: 'AWS region'
+        required: true
+        default: 'us-east-1'
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    if: ${{ inputs.confirm == 'DEPLOY-GOVERNANCE' }}
+    runs-on: ubuntu-latest
+    environment: governance-test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Show target AWS account
+        run: aws sts get-caller-identity
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: '1.6.6'
+
+      - name: Terraform init
+        run: terraform init
+
+      - name: Terraform validate
+        run: terraform validate
+
+      - name: Terraform plan
+        run: |
+          terraform plan -out=tfplan \
+            -var="aws_region=${{ inputs.aws_region }}" \
+            -var="environment=Dev" \
+            -var="object_lock_mode=GOVERNANCE" \
+            -var="retention_days=7"
+
+      - name: Terraform apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Invoke evidence collector
+        run: |
+          FUNCTION_NAME=$(terraform output -raw collector_function_name)
+          aws lambda invoke --function-name "$FUNCTION_NAME" response.json
+          cat response.json
+
+      - name: Verify evidence exists in vault
+        run: |
+          BUCKET_NAME=$(terraform output -raw evidence_vault_name)
+          echo "Evidence vault: $BUCKET_NAME"
+          aws s3api list-object-versions --bucket "$BUCKET_NAME"
