@@ -1,7 +1,12 @@
+import sys
+from pathlib import Path
+
+# Add parent directory to path so 'collector' module can be found
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import importlib
 import json
 import os
-import sys
 from datetime import datetime, timezone
 from decimal import Decimal
 from unittest.mock import MagicMock
