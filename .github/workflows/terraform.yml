@@ -25,7 +25,7 @@ jobs:
         run: pip install pytest
 
       - name: Run collector tests
-        run: pytest -q
+        run: pytest -v
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
