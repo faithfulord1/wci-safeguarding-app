@@ -1,5 +1,10 @@
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock
+
+# Mock boto3 BEFORE importing collector since collector imports boto3 at module level
+boto3_mock = MagicMock()
+sys.modules["boto3"] = boto3_mock
 
 # Add parent directory to path so 'collector' module can be found
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -9,12 +14,9 @@ import json
 import os
 from datetime import datetime, timezone
 from decimal import Decimal
-from unittest.mock import MagicMock
 
 os.environ.setdefault("EVIDENCE_VAULT_NAME", "test-vault")
 
-boto3_mock = MagicMock()
-sys.modules["boto3"] = boto3_mock
 collector = importlib.import_module("collector")
 
 
