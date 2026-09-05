@@ -1,5 +1,7 @@
 # Automated GRC Evidence Vault on AWS
 
+> **Repository identity note:** the GitHub repository name `wci-safeguarding-app` is a legacy name. The code currently maintained here is the **Automated GRC Evidence Vault on AWS**. A standard `main` branch has now been created so the project can be validated and maintained normally. The repository itself should be renamed in GitHub settings when convenient so the URL matches the implementation.
+
 A portfolio-ready GRC Engineering project that continuously collects AWS Config compliance evidence and stores it in an S3 evidence vault protected by versioning, encryption and S3 Object Lock.
 
 ## What this demonstrates
